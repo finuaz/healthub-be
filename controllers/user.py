@@ -39,28 +39,32 @@ logging.basicConfig(level=logging.INFO)
 
 blp = Blueprint("users", __name__, description="Operations on users")
 
+@blp.route("/health-check")
+class HealthCheck(MethodView):
+    @blp.response(200)
+    def get(self):
+        return {"status": "ok"}
 
 @blp.route("/users/register")
 class UserRegister(MethodView):
     @blp.arguments(UserRegisterSchema)
     @blp.response(201, UserRegisterSchema)
     def post(self, user_data):
-
+        print("AAAAAAAAAAAAAAAAAAAa")
         email_existing = UserModel.query.filter_by(email=user_data["email"]).first()
-        username_existing = UserModel.query.filter_by(
-            username=user_data["username"]
-        ).first()
-
         if email_existing:
             return (
-                jsonify({"message", "The email has been used"}),
+                jsonify({"message": "The email has been used"}),
                 409,
             )
 
+        username_existing = UserModel.query.filter_by(
+            username=user_data["username"]
+        ).first()
         if username_existing:
             return (
-                jsonify({"message", "The username has been used"}),
-                404,
+                jsonify({"message": "The username has been used"}),
+                409,
             )
 
         try:
@@ -80,6 +84,8 @@ class UserRegister(MethodView):
 
         except IntegrityError:
             abort(400, message="User with that email already exists")
+        except ValueError as e:
+            abort(400, message=str(e))
         except SQLAlchemyError as e:
             abort(500, message=f"An error occurred while creating the user: {str(e)}")
         return user

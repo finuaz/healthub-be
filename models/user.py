@@ -93,12 +93,9 @@ class UserModel(db.Model):
         self.view_count = view_count
 
     def add_user(self):
-        try:
-            self.validate_email()
-            db.session.add(self)
-            db.session.commit()
-        except Exception as e:
-            print(e)
+        self.validate_email()
+        db.session.add(self)
+        db.session.commit()
 
     @classmethod
     def get_user(cls, user_id):
