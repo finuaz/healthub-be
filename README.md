@@ -58,3 +58,5 @@ To get API documentation you can use our Postman documentation
 Or you can use swagger for more flexibility. Copy this URL into your browser once the Flask App already run
 
     http://localhost:5000/swagger
+
+.
