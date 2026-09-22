@@ -50,7 +50,6 @@ class UserRegister(MethodView):
     @blp.arguments(UserRegisterSchema)
     @blp.response(201, UserRegisterSchema)
     def post(self, user_data):
-        print("AAAAAAAAAAAAAAAAAAAa")
         email_existing = UserModel.query.filter_by(email=user_data["email"]).first()
         if email_existing:
             return (
@@ -101,7 +100,7 @@ class UserLogin(MethodView):
 
         if username_or_email is None:
             return (
-                jsonify({"message", "Username or email is required"}),
+                jsonify({"message": "Username or email is required"}),
                 400,
             )
 
@@ -116,7 +115,7 @@ class UserLogin(MethodView):
 
             access_token = create_access_token(
                 identity={
-                    "id": user.id,
+                    "id": str(user.id),
                     "username": user.username,
                     "email": user.email,
                     "role": role,
@@ -125,7 +124,7 @@ class UserLogin(MethodView):
             )
             refresh_token = create_refresh_token(
                 identity={
-                    "id": user.id,
+                    "id": str(user.id),
                     "username": user.username,
                     "email": user.email,
                     "role": role,
