@@ -75,7 +75,7 @@ def create_app(is_test=False):
 
     # JWT configuration
     jwt = JWTManager(app)
-    app.config["JWT_SECRET_KEY"] = "Tim Depok RevoU"
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "Tim Depok RevoU")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 36000  #  Expires in 10 hours
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = 2592000  #  Expires in 30 days
 
