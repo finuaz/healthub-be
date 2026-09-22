@@ -38,7 +38,7 @@ class RecipeTypeRelationModel(db.Model):
         if recipe_type is None:
             logging.error(f"recipe_type with id {recipe_type_id} not found.")
             return (
-                jsonify({"message", "recipe type with id {recipe_type_id} not found."}),
+                jsonify({"message": "recipe type with id {recipe_type_id} not found."}),
                 404,
             )
         return recipe_type

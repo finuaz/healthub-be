@@ -34,7 +34,7 @@ class RecipeRate(MethodView):
 
             if not recipe:
                 return (
-                    jsonify({"message", "The recipe does not exist"}),
+                    jsonify({"message": "The recipe does not exist"}),
                     404,
                 )
 
@@ -43,7 +43,7 @@ class RecipeRate(MethodView):
 
             if not rate_value:
                 return (
-                    jsonify({"message", "The rate value is required"}),
+                    jsonify({"message": "The rate value is required"}),
                     404,
                 )
 
@@ -91,7 +91,7 @@ class RecipeUnrate(MethodView):
 
             if not recipe:
                 return (
-                    jsonify({"message", "The recipe does not exist"}),
+                    jsonify({"message": "The recipe does not exist"}),
                     404,
                 )
 
@@ -101,7 +101,7 @@ class RecipeUnrate(MethodView):
 
             if not rate_exist:
                 return (
-                    jsonify({"message", "You have not rated this recipe yet"}),
+                    jsonify({"message": "You have not rated this recipe yet"}),
                     404,
                 )
 

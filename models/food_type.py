@@ -37,7 +37,7 @@ class TypeModel(db.Model):
         type = cls.query.filter_by(id=type_id).first()
         if type is None:
             logging.error(f"type with id {type_id} not found.")
-            return jsonify({"message", "type with id {type_id} not found."}), 404
+            return jsonify({"message": "type with id {type_id} not found."}), 404
         return type
 
     def update_type(self, type_data):

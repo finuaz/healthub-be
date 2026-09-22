@@ -42,7 +42,7 @@ class RateModel(db.Model):
         rate = cls.query.filter_by(id=rate_id).first()
         if rate is None:
             logging.error(f"rate with id {rate_id} not found.")
-            return jsonify({"message", "rate with id {rate_id} not found."}), 404
+            return jsonify({"message": "rate with id {rate_id} not found."}), 404
         return rate
 
     def update_rate(self, rate_data):

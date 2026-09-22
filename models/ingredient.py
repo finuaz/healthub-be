@@ -47,7 +47,7 @@ class IngredientModel(db.Model):
         if ingredient is None:
             logging.error(f"ingredient with id {ingredient_id} not found.")
             return (
-                jsonify({"message", "ingredient with id {ingredient_id} not found."}),
+                jsonify({"message": "ingredient with id {ingredient_id} not found."}),
                 404,
             )
         return ingredient

@@ -40,7 +40,7 @@ class LikeModel(db.Model):
         like = cls.query.filter_by(id=like_id).first()
         if like is None:
             logging.error(f"like with id {like_id} not found.")
-            return jsonify({"message", "like with id {like_id} not found."}), 404
+            return jsonify({"message": "like with id {like_id} not found."}), 404
         return like
 
     def update_like(self, like_data):

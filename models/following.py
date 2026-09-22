@@ -51,7 +51,7 @@ class FollowingModel(db.Model):
         if following is None:
             logging.error(f"following with id {following_id} not found.")
             return (
-                jsonify({"message", "following with id {following_id} not found."}),
+                jsonify({"message": "following with id {following_id} not found."}),
                 404,
             )
         return following

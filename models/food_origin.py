@@ -39,7 +39,7 @@ class OriginModel(db.Model):
         origin = cls.query.filter_by(id=origin_id).first()
         if origin is None:
             logging.error(f"origin with id {origin_id} not found.")
-            return jsonify({"message", "origin with id {origin_id} not found."}), 404
+            return jsonify({"message": "origin with id {origin_id} not found."}), 404
         return origin
 
     def update_origin(self, origin_data):

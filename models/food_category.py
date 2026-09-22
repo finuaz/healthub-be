@@ -42,7 +42,7 @@ class CategoryModel(db.Model):
         if category is None:
             logging.error(f"Category with id {category_id} not found.")
             return (
-                jsonify({"message", "category with id {category_id} not found."}),
+                jsonify({"message": "category with id {category_id} not found."}),
                 404,
             )
         return category

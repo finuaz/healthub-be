@@ -45,7 +45,7 @@ class CommentModel(db.Model):
         comment = cls.query.filter_by(id=comment_id).first()
         if comment is None:
             logging.error(f"comment with id {comment_id} not found.")
-            return jsonify({"message", "comment with id {comment_id} not found."}), 404
+            return jsonify({"message": "comment with id {comment_id} not found."}), 404
 
         return comment
 

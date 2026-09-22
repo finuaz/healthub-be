@@ -50,7 +50,7 @@ class GetAllFeeds(MethodView):
             recipes = RecipeModel.query.order_by(desc(RecipeModel.nutriscore)).all()
 
             if not recipes:
-                return jsonify({"message", "No recipe has been created"}), 404
+                return jsonify({"message": "No recipe has been created"}), 404
 
             for recipe in recipes:
                 recipe.author_name = get_author_name(recipe.id)
@@ -102,7 +102,7 @@ class GetFeedsByCategory(MethodView):
             if not recipes:
                 return (
                     jsonify(
-                        {"message", "No recipe has created under the category name"}
+                        {"message": "No recipe has created under the category name"}
                     ),
                     404,
                 )
@@ -154,7 +154,7 @@ class GetFeedsByType(MethodView):
             if not recipes:
                 return (
                     jsonify(
-                        {"message", "No recipe has been created under the type name"}
+                        {"message": "No recipe has been created under the type name"}
                     ),
                     404,
                 )
@@ -206,7 +206,7 @@ class GetFeedsByOrigin(MethodView):
             if not recipes:
                 return (
                     jsonify(
-                        {"message", "No recipe has been created under the origin name"}
+                        {"message": "No recipe has been created under the origin name"}
                     ),
                     404,
                 )
@@ -254,7 +254,7 @@ class GetFeedsByTag(MethodView):
             if not recipes:
                 return (
                     jsonify(
-                        {"message", "No recipe has been created under the tag name"}
+                        {"message": "No recipe has been created under the tag name"}
                     ),
                     404,
                 )

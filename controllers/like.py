@@ -56,7 +56,7 @@ class RecipeUnlike(MethodView):
 
             if not recipe:
                 return (
-                    jsonify({"message", "The recipe does not exist"}),
+                    jsonify({"message": "The recipe does not exist"}),
                     404,
                 )
 
@@ -66,7 +66,7 @@ class RecipeUnlike(MethodView):
 
             if not like_exist:
                 return (
-                    jsonify({"message", "You haven't liked this recipe yet"}),
+                    jsonify({"message": "You haven't liked this recipe yet"}),
                     403,
                 )
 

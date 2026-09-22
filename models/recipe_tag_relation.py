@@ -38,7 +38,7 @@ class RecipeTagRelationModel(db.Model):
         if recipe_tag is None:
             logging.error(f"recipe_tag with id {recipe_tag_id} not found.")
             return (
-                jsonify({"message", "recipe tag with id {recipe_tag_id} not found."}),
+                jsonify({"message": "recipe tag with id {recipe_tag_id} not found."}),
                 404,
             )
         return recipe_tag

@@ -40,7 +40,7 @@ class RecipeOriginRelationModel(db.Model):
         recipe_origin = cls.query.filter_by(id=recipe_origin_id).first()
         if recipe_origin is None:
             logging.error(f"recipe_origin with id {recipe_origin_id} not found.")
-            return jsonify({"message", "origin with id {origin_id} not found."}), 404
+            return jsonify({"message": "origin with id {origin_id} not found."}), 404
         return recipe_origin
 
     def update_recipe_origin(self, recipe_origin_data):

@@ -151,11 +151,11 @@ class UserGetOwnProfile(MethodView):
     def get(self):
 
         try:
-            current_user_id = get_jwt_identity()["id"]
+            current_user_id = int(get_jwt_identity()["id"])
             user = UserModel.query.filter_by(id=current_user_id).first()
             if not user:
                 return (
-                    jsonify({"message", "The user is not found"}),
+                    jsonify({"message": "The user is not found"}),
                     404,
                 )
 

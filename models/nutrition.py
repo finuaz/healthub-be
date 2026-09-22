@@ -83,7 +83,7 @@ class NutritionModel(db.Model):
         if nutrition is None:
             logging.error(f"nutrition with id {nutrition_id} not found.")
             return (
-                jsonify({"message", "nutrition with id {nutrition_id} not found."}),
+                jsonify({"message": "nutrition with id {nutrition_id} not found."}),
                 404,
             )
         return nutrition

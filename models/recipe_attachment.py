@@ -40,7 +40,7 @@ class AttachmentModel(db.Model):
         if attachment is None:
             logging.error(f"attachment with id {attachment_id} not found.")
             return (
-                jsonify({"message", "attachment with id {attachment_id} not found."}),
+                jsonify({"message": "attachment with id {attachment_id} not found."}),
                 404,
             )
         return attachment

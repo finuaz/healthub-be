@@ -83,7 +83,7 @@ class RecipeModel(db.Model):
         recipe = cls.query.filter_by(id=recipe_id).first()
         if recipe is None:
             logging.error(f"recipe with id {recipe_id} not found.")
-            return jsonify({"message", "recipe with id {recipe_id} not found."}), 404
+            return jsonify({"message": "recipe with id {recipe_id} not found."}), 404
         return recipe
 
     def update_recipe(self, recipe_data):

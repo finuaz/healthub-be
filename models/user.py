@@ -102,7 +102,7 @@ class UserModel(db.Model):
         user = cls.query.filter_by(id=user_id).first()
         if user is None:
             logging.error(f"User with id {user_id} not found.")
-            return jsonify({"message", "user with id {user_id} not found."}), 404
+            return jsonify({"message": "user with id {user_id} not found."}), 404
         return user
 
     def update_user(self, user_data):

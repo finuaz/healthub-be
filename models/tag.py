@@ -37,7 +37,7 @@ class TagModel(db.Model):
         tag = cls.query.filter_by(id=tag_id).first()
         if tag is None:
             logging.error(f"tag with id {tag_id} not found.")
-            return jsonify({"message", "tag with id {tag_id} not found."}), 404
+            return jsonify({"message": "tag with id {tag_id} not found."}), 404
         return tag
 
     def update_tag(self, tag_data):

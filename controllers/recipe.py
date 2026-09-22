@@ -84,7 +84,7 @@ class RecipeRegister(MethodView):
         ).first()
         if existing_recipe:
             return (
-                jsonify({"message", "Recipe with the same title already exists"}),
+                jsonify({"message": "Recipe with the same title already exists"}),
                 404,
             )
 
@@ -339,7 +339,7 @@ class RecipeDetailsByTitle(MethodView):
             ).first()
             if not recipe:
                 return (
-                    jsonify({"message", "The recipe is not found"}),
+                    jsonify({"message": "The recipe is not found"}),
                     404,
                 )
 
@@ -416,7 +416,7 @@ class RecipeUpdate(MethodView):
 
         if recipe.author_id != user_id:
             return (
-                jsonify({"message", "You are not authorized to edit this recipe"}),
+                jsonify({"message": "You are not authorized to edit this recipe"}),
                 403,
             )
 
@@ -658,13 +658,13 @@ class RecipeDelete(MethodView):
 
         if not recipe:
             return (
-                jsonify({"message", "The recipe is not found"}),
+                jsonify({"message": "The recipe is not found"}),
                 404,
             )
 
         if recipe.author_id != user_id:
             return (
-                jsonify({"message", "You are not authorized to delete the recipe"}),
+                jsonify({"message": "You are not authorized to delete the recipe"}),
                 403,
             )
 
