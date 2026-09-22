@@ -43,7 +43,7 @@ blp = Blueprint("users", __name__, description="Operations on users")
 class HealthCheck(MethodView):
     @blp.response(200)
     def get(self):
-        return {"status": "ok"}
+        return {"status": "fix user_id type"}
 
 @blp.route("/users/register")
 class UserRegister(MethodView):
