@@ -329,12 +329,16 @@ class GetAllUserFollowers(MethodView):
             if not followers:
                 abort(404, message="You have no any follower")
 
+            users = []
+
             for follower in followers:
                 user = UserModel.query.filter_by(id=follower.follower_id).first()
-                user.total_following = count_following(user.id)
-                user.total_follower = count_follower(user.id)
+                if user:
+                    user.total_following = count_following(user.id)
+                    user.total_follower = count_follower(user.id)
+                    users.append(user)
 
-            serialized_user = UserGetProfileSchema().dump(user)
+            serialized_user = UserGetProfileSchema(many=True).dump(users)
             return jsonify(serialized_user), 200
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
@@ -361,12 +365,16 @@ class GetAllFollowedUsers(MethodView):
             if not followed_users:
                 return jsonify({"message": "You have not following any user yet"}), 404
 
+            users = []
+
             for followed_user in followed_users:
                 user = UserModel.query.filter_by(id=followed_user.followed_id).first()
-                user.total_following = count_following(user.id)
-                user.total_follower = count_follower(user.id)
+                if user:
+                    user.total_following = count_following(user.id)
+                    user.total_follower = count_follower(user.id)
+                    users.append(user)
 
-            serialized_user = UserGetProfileSchema().dump(user)
+            serialized_user = UserGetProfileSchema(many=True).dump(users)
             return jsonify(serialized_user), 200
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
