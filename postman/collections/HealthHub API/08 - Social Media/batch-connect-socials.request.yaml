@@ -1,0 +1,16 @@
+$kind: http-request
+name: Batch Connect Social Media
+order: 1000
+method: POST
+url: '{{base_url}}/users/socials/batch/connect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "facebook": "https://facebook.com/johndoe",
+      "instagram": "https://instagram.com/johndoe",
+      "tiktok": "https://tiktok.com/@johndoe"
+    }

@@ -1,0 +1,5 @@
+$kind: http-request
+name: Like Recipe
+order: 1000
+method: POST
+url: '{{base_url}}/recipes/like/{{recipe_id}}'

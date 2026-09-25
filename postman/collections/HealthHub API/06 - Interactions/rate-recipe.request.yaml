@@ -1,0 +1,14 @@
+$kind: http-request
+name: Rate Recipe
+order: 3000
+method: POST
+url: '{{base_url}}/recipes/rate/{{recipe_id}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "value": 4
+    }

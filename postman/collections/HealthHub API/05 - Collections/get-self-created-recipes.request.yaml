@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Self-Created Recipes
+order: 1000
+method: GET
+url: '{{base_url}}/collection/recipes/self-created'

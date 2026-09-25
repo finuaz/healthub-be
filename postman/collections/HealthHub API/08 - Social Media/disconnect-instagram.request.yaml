@@ -1,0 +1,14 @@
+$kind: http-request
+name: Disconnect Instagram
+order: 8000
+method: POST
+url: '{{base_url}}/users/socials/instagram/disconnect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "instagram": "https://instagram.com/johndoe"
+    }

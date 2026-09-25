@@ -1,0 +1,9 @@
+$kind: collection
+description: API collection for the HealthHub backend - a recipe and social platform
+variables:
+  base_url: http://localhost:5000
+  access_token: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"

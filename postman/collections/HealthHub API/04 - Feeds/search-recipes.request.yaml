@@ -1,0 +1,7 @@
+$kind: http-request
+name: Search Recipes
+order: 6000
+method: GET
+url: '{{base_url}}/feeds/recipes/search/{{search_keyword}}'
+auth:
+  type: noauth

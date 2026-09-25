@@ -1,0 +1,14 @@
+$kind: http-request
+name: Edit Comment on Recipe
+order: 6000
+method: PUT
+url: '{{base_url}}/recipes/comment/{{recipe_id}}/edit/{{comment_id}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "message": "Updated: This recipe is absolutely amazing!"
+    }

@@ -1,0 +1,7 @@
+$kind: http-request
+name: Filter Recipes by Origin
+order: 4000
+method: GET
+url: '{{base_url}}/feeds/recipes/filter-by/origin/{{origin_id}}'
+auth:
+  type: noauth

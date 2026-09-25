@@ -1,0 +1,5 @@
+$kind: http-request
+name: Unrate Recipe
+order: 4000
+method: POST
+url: '{{base_url}}/recipes/unrate/{{recipe_id}}'

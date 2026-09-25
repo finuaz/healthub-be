@@ -1,0 +1,40 @@
+$kind: http-request
+name: Create Recipe
+order: 1000
+method: POST
+url: '{{base_url}}/recipes/create'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Healthy Green Salad",
+      "description": "A fresh and nutritious green salad",
+      "nutriscore": 85,
+      "cooktime": 15,
+      "complexity": "easy",
+      "servings": 2,
+      "budget": "low",
+      "instruction": "1. Wash vegetables. 2. Chop and mix. 3. Add dressing.",
+      "categories": ["salad", "vegetarian"],
+      "type": "lunch",
+      "origin": "Mediterranean",
+      "tags": ["healthy", "quick", "vegan"],
+      "attachment": "https://example.com/salad.jpg",
+      "ingredients": [["lettuce", "100g"], ["tomato", "2 pieces"], ["cucumber", "1 piece"]],
+      "serving_per_container": 2,
+      "serving_size": "200g",
+      "calories": 150.00,
+      "total_fat": 5.00,
+      "total_carbohydrate": 20.00,
+      "total_sugar": 8.00,
+      "cholesterol": 0.00,
+      "protein": 4.00,
+      "vitamin_d": 0.00,
+      "sodium": 120.00,
+      "calcium": 80.00,
+      "potassium": 350.00,
+      "iron": 2.00
+    }

@@ -2,6 +2,7 @@ import os
 import sentry_sdk
 import logging
 import sys
+from urllib.parse import urlparse
 
 from flask import Flask, jsonify
 from flask_smorest import Api
@@ -35,6 +36,28 @@ sentry_sdk.init(
 )
 
 
+HOSTED_SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
+
+
+def hosted_database_uri():
+    database_uri = os.getenv("DATABASE_URI")
+
+    if not database_uri:
+        raise RuntimeError(
+            "DATABASE_URI is not set. Add the hosted Supabase connection string to .env."
+        )
+
+    host = urlparse(database_uri).hostname or ""
+
+    if not host.endswith(HOSTED_SUPABASE_HOST_SUFFIXES):
+        raise RuntimeError(
+            f"DATABASE_URI must point to a hosted Supabase project, got host '{host}'. "
+            "Local Supabase connections are not supported."
+        )
+
+    return database_uri
+
+
 def create_app(is_test=False):
     app = Flask(__name__)
     load_dotenv()
@@ -55,11 +78,11 @@ def create_app(is_test=False):
     )
 
     if is_test is True:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
-    else:
         app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-            "DATABASE_URI", "sqlite:///data.db"
+            "TEST_DATABASE_URI", "sqlite://"
         )
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = hosted_database_uri()
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 

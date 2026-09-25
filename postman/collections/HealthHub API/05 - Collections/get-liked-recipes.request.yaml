@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Liked Recipes
+order: 4000
+method: GET
+url: '{{base_url}}/collection/recipes/liked'

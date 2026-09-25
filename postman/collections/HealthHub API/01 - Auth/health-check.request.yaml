@@ -1,0 +1,7 @@
+$kind: http-request
+name: Health Check
+order: 3000
+method: GET
+url: '{{base_url}}/health-check'
+auth:
+  type: noauth

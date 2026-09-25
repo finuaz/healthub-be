@@ -1,0 +1,14 @@
+$kind: http-request
+name: Update User Image
+order: 5000
+method: PUT
+url: '{{base_url}}/users/update-image'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "image": "https://example.com/profile-image.jpg"
+    }

@@ -1,0 +1,18 @@
+$kind: http-request
+name: Update User Info
+order: 4000
+method: PUT
+url: '{{base_url}}/users/update-info'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "bio": "I love cooking healthy meals",
+      "phone": "+1234567890",
+      "location": "New York, USA"
+    }

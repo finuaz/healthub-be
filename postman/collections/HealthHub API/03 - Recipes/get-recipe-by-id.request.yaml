@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Recipe by ID
+order: 2000
+method: GET
+url: '{{base_url}}/recipes/details/{{recipe_id}}'
+auth:
+  type: noauth

@@ -12,6 +12,8 @@ from .userschema import (
 )
 
 from .recipeschema import (
+    CategorySchema,
+    OriginSchema,
     RecipeSchema,
     RecipeImageSchema,
     RecipeInstructionSchema,

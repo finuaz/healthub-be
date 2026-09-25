@@ -1,0 +1,14 @@
+$kind: http-request
+name: Connect TikTok
+order: 6000
+method: POST
+url: '{{base_url}}/users/socials/tiktok/connect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "tiktok": "https://tiktok.com/@johndoe"
+    }

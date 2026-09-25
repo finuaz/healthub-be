@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Followed Users
+order: 8000
+method: GET
+url: '{{base_url}}/collection/list/followed-users'

@@ -1,0 +1,14 @@
+$kind: http-request
+name: Disconnect Facebook
+order: 7000
+method: POST
+url: '{{base_url}}/users/socials/facebook/disconnect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "facebook": "https://facebook.com/johndoe"
+    }

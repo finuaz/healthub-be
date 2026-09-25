@@ -1,0 +1,5 @@
+$kind: http-request
+name: Delete Comment from Recipe
+order: 7000
+method: DELETE
+url: '{{base_url}}/recipes/uncomment/{{recipe_id}}/{{comment_id}}'

@@ -1,3 +1,5 @@
+# This project targets the hosted Supabase project only. This file exists for linked CLI
+# operations (supabase link / supabase db push --linked); the local stack is not used.
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the

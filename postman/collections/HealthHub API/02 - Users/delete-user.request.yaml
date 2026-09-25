@@ -1,0 +1,14 @@
+$kind: http-request
+name: Delete User
+order: 8000
+method: DELETE
+url: '{{base_url}}/users/delete'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "password": "securepassword123"
+    }

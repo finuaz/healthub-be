@@ -34,6 +34,7 @@ class RecipeModel(db.Model):
     rates = db.relationship("RateModel", back_populates="recipes")
     attachments = db.relationship("AttachmentModel", back_populates="recipes")
     nutritions = db.relationship("NutritionModel", back_populates="recipes")
+    author = db.relationship("UserModel", foreign_keys=[author_id])
 
     recipe_categories = db.relationship(
         "RecipeCategoryRelationModel", back_populates="recipes"

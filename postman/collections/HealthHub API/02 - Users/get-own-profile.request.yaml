@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Own Profile
+order: 1000
+method: GET
+url: '{{base_url}}/users/profile'

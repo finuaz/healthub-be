@@ -1,0 +1,5 @@
+$kind: http-request
+name: Follow User
+order: 1000
+method: POST
+url: '{{base_url}}/users/follow/{{user_id_to_follow}}'

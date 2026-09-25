@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get User Social Media by ID
+order: 3000
+method: GET
+url: '{{base_url}}/users/{{user_id_in_search}}/socials'
+auth:
+  type: noauth

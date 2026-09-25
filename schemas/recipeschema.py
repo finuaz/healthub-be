@@ -6,6 +6,16 @@ from collections import OrderedDict
 # from schemas import CommentSchema
 
 
+class CategorySchema(Schema):
+    id = fields.Integer(dump_only=True)
+    category = fields.String()
+
+
+class OriginSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    origin = fields.String()
+
+
 class CommentSchema(Schema):
     id = fields.Integer(dump_only=True)
     user_id = fields.Integer()
@@ -85,6 +95,7 @@ class RecipePlusPlusSchema(Schema):
 
     # Ingredient group
     ingredients = fields.List(fields.List(fields.String()))
+    ingredients_count = fields.Integer(dump_only=True)
 
     # Nutrition group
     serving_per_container = fields.Integer()

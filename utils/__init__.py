@@ -35,6 +35,8 @@ from .feed_helpers import (
     find_all_tag,
     get_likes,
     get_rating,
+    enrich_recipes,
+    merge_recipes,
 )
 
 from .user_helpers import (

@@ -1,0 +1,7 @@
+$kind: http-request
+name: Filter Recipes by Category
+order: 2000
+method: GET
+url: '{{base_url}}/feeds/recipes/filter-by/category/{{category_id}}'
+auth:
+  type: noauth

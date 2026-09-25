@@ -1,0 +1,14 @@
+$kind: http-request
+name: Add Comment to Recipe
+order: 5000
+method: POST
+url: '{{base_url}}/recipes/comment/{{recipe_id}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "message": "This recipe looks amazing!"
+    }

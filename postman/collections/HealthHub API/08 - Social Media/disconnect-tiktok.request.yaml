@@ -1,0 +1,14 @@
+$kind: http-request
+name: Disconnect TikTok
+order: 9000
+method: POST
+url: '{{base_url}}/users/socials/tiktok/disconnect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "tiktok": "https://tiktok.com/@johndoe"
+    }

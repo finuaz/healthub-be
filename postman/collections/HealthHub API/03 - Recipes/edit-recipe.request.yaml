@@ -1,0 +1,26 @@
+$kind: http-request
+name: Edit Recipe
+order: 4000
+method: PUT
+url: '{{base_url}}/recipes/edit/{{recipe_id}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Updated Healthy Green Salad",
+      "description": "An updated fresh and nutritious green salad",
+      "nutriscore": 90,
+      "cooktime": 10,
+      "complexity": "easy",
+      "servings": 3,
+      "budget": "low",
+      "instruction": "1. Wash vegetables. 2. Chop and mix. 3. Add dressing. 4. Serve chilled.",
+      "categories": ["salad", "vegetarian"],
+      "type": "lunch",
+      "origin": "Mediterranean",
+      "tags": ["healthy", "quick", "vegan"],
+      "attachment": "https://example.com/salad-updated.jpg"
+    }

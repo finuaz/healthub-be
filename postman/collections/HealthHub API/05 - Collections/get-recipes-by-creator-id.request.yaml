@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Recipes by Creator ID
+order: 2000
+method: GET
+url: '{{base_url}}/collection/recipes/creator/{{author_id}}'
+auth:
+  type: noauth

@@ -1,0 +1,14 @@
+$kind: http-request
+name: Connect Instagram
+order: 5000
+method: POST
+url: '{{base_url}}/users/socials/instagram/connect'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "instagram": "https://instagram.com/johndoe"
+    }

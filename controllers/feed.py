@@ -21,22 +21,48 @@ from models import (
     IngredientModel,
     RecipeIngredientRelationModel,
 )
-from schemas import RecipePlusPlusSchema
-from utils import (
-    find_all_category,
-    find_all_type,
-    find_all_origin,
-    find_all_tag,
-    get_likes,
-    get_rating,
-    find_attachment,
-    chef_recipe_check,
-    get_author_name,
-)
+from schemas import CategorySchema, OriginSchema, RecipePlusPlusSchema
+from utils import enrich_recipes, merge_recipes
 
 logging.basicConfig(level=logging.INFO)
 
 blp = Blueprint("feeds", __name__, description="Operations on feeds")
+
+
+@blp.route("/feeds/categories/all")
+class GetAllCategories(MethodView):
+
+    @blp.response(200, CategorySchema(many=True))
+    def get(self):
+        try:
+            categories = CategoryModel.query.order_by(CategoryModel.id.asc()).all()
+            serialized_categories = CategorySchema(many=True).dump(categories)
+            return jsonify(serialized_categories), 200
+
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            abort(500, "Internal Server Error")
+        except Exception as e:
+            current_app.logger.error(f"An unexpected error occurred: {str(e)}")
+            abort(500, "Internal Server Error")
+
+
+@blp.route("/feeds/origins/all")
+class GetAllOrigins(MethodView):
+
+    @blp.response(200, OriginSchema(many=True))
+    def get(self):
+        try:
+            origins = OriginModel.query.order_by(OriginModel.id.asc()).all()
+            serialized_origins = OriginSchema(many=True).dump(origins)
+            return jsonify(serialized_origins), 200
+
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            abort(500, "Internal Server Error")
+        except Exception as e:
+            current_app.logger.error(f"An unexpected error occurred: {str(e)}")
+            abort(500, "Internal Server Error")
 
 
 @blp.route("/feeds/recipes/all")
@@ -52,16 +78,7 @@ class GetAllFeeds(MethodView):
             if not recipes:
                 return jsonify({"message": "No recipe has been created"}), 404
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
 
@@ -75,29 +92,27 @@ class GetAllFeeds(MethodView):
             abort(500, "Internal Server Error")
 
 
-@blp.route("/feeds/recipes/filter-by/category/<string:recipe_category_in_search>")
-class GetFeedsByCategory(MethodView):
+@blp.route("/feeds/recipes/filter-by/category/<int:category_id>")
+class GetFeedsByCategoryId(MethodView):
 
     @blp.response(200, RecipePlusPlusSchema(many=True))
     # @cache.cached(timeout=60 * 3)
-    def get(self, recipe_category_in_search):
+    def get(self, category_id):
         try:
-            category = CategoryModel.query.filter_by(
-                category=recipe_category_in_search
-            ).first()
+            category = CategoryModel.query.filter_by(id=category_id).first()
 
-            recipe_categories = RecipeCategoryRelationModel.query.filter_by(
-                category_id=category.id
-            ).all()
+            if category is None:
+                return jsonify({"message": "Category not found"}), 404
 
-            recipes = []
-
-            for recipe_category in recipe_categories:
-                recipes.extend(
-                    RecipeModel.query.filter_by(id=recipe_category.recipe_id)
-                    .order_by(desc(RecipeModel.nutriscore))
-                    .all()
+            recipes = (
+                RecipeModel.query.join(
+                    RecipeCategoryRelationModel,
+                    RecipeCategoryRelationModel.recipe_id == RecipeModel.id,
                 )
+                .filter(RecipeCategoryRelationModel.category_id == category.id)
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
             if not recipes:
                 return (
@@ -107,16 +122,7 @@ class GetFeedsByCategory(MethodView):
                     404,
                 )
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -138,18 +144,18 @@ class GetFeedsByType(MethodView):
         try:
             type = TypeModel.query.filter_by(type=recipe_type_in_search).first()
 
-            recipe_types = RecipeTypeRelationModel.query.filter_by(
-                type_id=type.id
-            ).all()
+            if type is None:
+                return jsonify({"message": "Type not found"}), 404
 
-            recipes = []
-
-            for recipe_type in recipe_types:
-                recipes.extend(
-                    RecipeModel.query.filter_by(id=recipe_type.recipe_id)
-                    .order_by(desc(RecipeModel.nutriscore))
-                    .all()
+            recipes = (
+                RecipeModel.query.join(
+                    RecipeTypeRelationModel,
+                    RecipeTypeRelationModel.recipe_id == RecipeModel.id,
                 )
+                .filter(RecipeTypeRelationModel.type_id == type.id)
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
             if not recipes:
                 return (
@@ -159,16 +165,7 @@ class GetFeedsByType(MethodView):
                     404,
                 )
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -181,27 +178,27 @@ class GetFeedsByType(MethodView):
             abort(500, "Internal Server Error")
 
 
-@blp.route("/feeds/recipes/filter-by/origin/<string:recipe_origin_in_search>")
-class GetFeedsByOrigin(MethodView):
+@blp.route("/feeds/recipes/filter-by/origin/<int:origin_id>")
+class GetFeedsByOriginId(MethodView):
 
     @blp.response(200, RecipePlusPlusSchema(many=True))
     # @cache.cached(timeout=60 * 3)
-    def get(self, recipe_origin_in_search):
+    def get(self, origin_id):
         try:
-            origin = OriginModel.query.filter_by(origin=recipe_origin_in_search).first()
+            origin = OriginModel.query.filter_by(id=origin_id).first()
 
-            recipe_origins = RecipeOriginRelationModel.query.filter_by(
-                origin_id=origin.id
-            ).all()
+            if origin is None:
+                return jsonify({"message": "Origin not found"}), 404
 
-            recipes = []
-
-            for recipe_origin in recipe_origins:
-                recipes.extend(
-                    RecipeModel.query.filter_by(id=recipe_origin.recipe_id)
-                    .order_by(desc(RecipeModel.nutriscore))
-                    .all()
+            recipes = (
+                RecipeModel.query.join(
+                    RecipeOriginRelationModel,
+                    RecipeOriginRelationModel.recipe_id == RecipeModel.id,
                 )
+                .filter(RecipeOriginRelationModel.origin_id == origin.id)
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
             if not recipes:
                 return (
@@ -211,16 +208,7 @@ class GetFeedsByOrigin(MethodView):
                     404,
                 )
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -242,14 +230,18 @@ class GetFeedsByTag(MethodView):
         try:
             tag = TagModel.query.filter_by(tagname=recipe_tag_in_search).first()
 
-            recipe_tags = RecipeTagRelationModel.query.filter_by(tag_id=tag.id).all()
+            if tag is None:
+                return jsonify({"message": "Tag not found"}), 404
 
-            recipes = []
-
-            for recipe_tag in recipe_tags:
-                recipes.extend(
-                    RecipeModel.query.filter_by(id=recipe_tag.recipe_id).all()
+            recipes = (
+                RecipeModel.query.join(
+                    RecipeTagRelationModel,
+                    RecipeTagRelationModel.recipe_id == RecipeModel.id,
                 )
+                .filter(RecipeTagRelationModel.tag_id == tag.id)
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
             if not recipes:
                 return (
@@ -259,16 +251,7 @@ class GetFeedsByTag(MethodView):
                     404,
                 )
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -296,87 +279,80 @@ class GetFeedsByCategory(MethodView):
                 )
             ).all()
 
+            recipe_ids = []
+
             # Search in CategoryModel
             categories = CategoryModel.query.filter(
                 CategoryModel.category.ilike(f"%{search_keyword}%")
             ).all()
 
-            for category in categories:
-                recipe_category_relations = RecipeCategoryRelationModel.query.filter_by(
-                    category_id=category.id
+            if categories:
+                recipe_category_relations = RecipeCategoryRelationModel.query.filter(
+                    RecipeCategoryRelationModel.category_id.in_(
+                        category.id for category in categories
+                    )
                 ).all()
-
-                for recipe_category in recipe_category_relations:
-                    recipe = RecipeModel.query.get(recipe_category.recipe_id)
-
-                    if recipe not in recipes:
-                        recipes.append(recipe)
+                recipe_ids.extend(
+                    relation.recipe_id for relation in recipe_category_relations
+                )
 
             # Search in TypeModel
             types = TypeModel.query.filter(
                 TypeModel.type.ilike(f"%{search_keyword}%")
             ).all()
 
-            for type in types:
-                recipe_type_relations = RecipeTypeRelationModel.query.filter_by(
-                    type_id=type.id
+            if types:
+                recipe_type_relations = RecipeTypeRelationModel.query.filter(
+                    RecipeTypeRelationModel.type_id.in_(type.id for type in types)
                 ).all()
-
-                for recipe_type in recipe_type_relations:
-                    recipe = RecipeModel.query.get(recipe_type.recipe_id)
-
-                    if recipe not in recipes:
-                        recipes.append(recipe)
+                recipe_ids.extend(
+                    relation.recipe_id for relation in recipe_type_relations
+                )
 
             # Search in OriginModel
             origins = OriginModel.query.filter(
                 OriginModel.origin.ilike(f"%{search_keyword}%")
             ).all()
 
-            for origin in origins:
-                recipe_origin_relations = RecipeOriginRelationModel.query.filter_by(
-                    origin_id=origin.id
+            if origins:
+                recipe_origin_relations = RecipeOriginRelationModel.query.filter(
+                    RecipeOriginRelationModel.origin_id.in_(
+                        origin.id for origin in origins
+                    )
                 ).all()
-
-                for recipe_origin in recipe_origin_relations:
-                    recipe = RecipeModel.query.get(recipe_origin.recipe_id)
-
-                    if recipe not in recipes:
-                        recipes.append(recipe)
+                recipe_ids.extend(
+                    relation.recipe_id for relation in recipe_origin_relations
+                )
 
             # Search in TagModel
             tags = TagModel.query.filter(
                 TagModel.tagname.ilike(f"%{search_keyword}%")
             ).all()
 
-            for tag in tags:
-                recipe_tag_relations = RecipeTagRelationModel.query.filter_by(
-                    tag_id=tag.id
+            if tags:
+                recipe_tag_relations = RecipeTagRelationModel.query.filter(
+                    RecipeTagRelationModel.tag_id.in_(tag.id for tag in tags)
                 ).all()
-
-                for recipe_tag in recipe_tag_relations:
-                    recipe = RecipeModel.query.get(recipe_tag.recipe_id)
-
-                    if recipe not in recipes:
-                        recipes.append(recipe)
+                recipe_ids.extend(relation.recipe_id for relation in recipe_tag_relations)
 
             # Search in IngredientModel
             ingredients = IngredientModel.query.filter(
                 IngredientModel.ingredient.ilike(f"%{search_keyword}%")
             ).all()
 
-            for ingredient in ingredients:
+            if ingredients:
                 recipe_ingredient_relations = (
-                    RecipeIngredientRelationModel.query.filter_by(
-                        ingredient_id=ingredient.id
+                    RecipeIngredientRelationModel.query.filter(
+                        RecipeIngredientRelationModel.ingredient_id.in_(
+                            ingredient.id for ingredient in ingredients
+                        )
                     ).all()
                 )
+                recipe_ids.extend(
+                    relation.recipe_id for relation in recipe_ingredient_relations
+                )
 
-                for recipe_ingredient in recipe_ingredient_relations:
-                    recipe = RecipeModel.query.get(recipe_ingredient.recipe_id)
-
-                    if recipe not in recipes:
-                        recipes.append(recipe)
+            recipes = merge_recipes(recipes, recipe_ids)
 
             if not recipes:
                 return (
@@ -386,16 +362,7 @@ class GetFeedsByCategory(MethodView):
                     404,
                 )
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200

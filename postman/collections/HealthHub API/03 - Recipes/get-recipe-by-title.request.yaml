@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Recipe by Title
+order: 3000
+method: GET
+url: '{{base_url}}/recipes/details/{{recipe_title}}'
+auth:
+  type: noauth
