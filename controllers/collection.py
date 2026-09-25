@@ -19,11 +19,10 @@ from models import (
     FollowingModel,
     UserRole,
 )
-from schemas import RecipePlusPlusSchema, UserGetProfileSchema
+from schemas import RecipePlusPlusSchema, UserPublicProfileSchema
 from utils import (
     enrich_recipes,
-    count_follower,
-    count_following,
+    serialize_user_list,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -258,31 +257,30 @@ class GetAllRecipesCreatedByChef(MethodView):
 @blp.route("/collection/list/user-followers")
 class GetAllUserFollowers(MethodView):
 
-    @blp.response(200, UserGetProfileSchema(many=True))
+    @blp.response(200, UserPublicProfileSchema(many=True))
     # @cache.cached(timeout=60 / 2)
     @jwt_required()
     def get(self):
         try:
-            current_user_id = get_jwt_identity()["id"]
+            current_user_id = int(get_jwt_identity()["id"])
 
-            followers = FollowingModel.query.filter_by(
-                followed_id=current_user_id
-            ).all()
+            follower_ids = [
+                row.follower_id
+                for row in db.session.query(FollowingModel.follower_id)
+                .filter(FollowingModel.followed_id == current_user_id)
+                .all()
+            ]
 
-            if not followers:
-                abort(404, message="You have no any follower")
+            if not follower_ids:
+                return jsonify({"message": "You have no any follower"}), 404
 
-            users = []
+            users = (
+                UserModel.query.filter(UserModel.id.in_(follower_ids))
+                .order_by(UserModel.id.asc())
+                .all()
+            )
 
-            for follower in followers:
-                user = UserModel.query.filter_by(id=follower.follower_id).first()
-                if user:
-                    user.total_following = count_following(user.id)
-                    user.total_follower = count_follower(user.id)
-                    users.append(user)
-
-            serialized_user = UserGetProfileSchema(many=True).dump(users)
-            return jsonify(serialized_user), 200
+            return jsonify(serialize_user_list(users)), 200
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
             abort(500, "Internal Server Error")
@@ -294,31 +292,30 @@ class GetAllUserFollowers(MethodView):
 @blp.route("/collection/list/followed-users")
 class GetAllFollowedUsers(MethodView):
 
-    @blp.response(200, UserGetProfileSchema(many=True))
+    @blp.response(200, UserPublicProfileSchema(many=True))
     # @cache.cached(timeout=60 / 2)
     @jwt_required()
     def get(self):
         try:
-            current_user_id = get_jwt_identity()["id"]
+            current_user_id = int(get_jwt_identity()["id"])
 
-            followed_users = FollowingModel.query.filter_by(
-                follower_id=current_user_id
-            ).all()
+            followed_ids = [
+                row.followed_id
+                for row in db.session.query(FollowingModel.followed_id)
+                .filter(FollowingModel.follower_id == current_user_id)
+                .all()
+            ]
 
-            if not followed_users:
+            if not followed_ids:
                 return jsonify({"message": "You have not following any user yet"}), 404
 
-            users = []
+            users = (
+                UserModel.query.filter(UserModel.id.in_(followed_ids))
+                .order_by(UserModel.id.asc())
+                .all()
+            )
 
-            for followed_user in followed_users:
-                user = UserModel.query.filter_by(id=followed_user.followed_id).first()
-                if user:
-                    user.total_following = count_following(user.id)
-                    user.total_follower = count_follower(user.id)
-                    users.append(user)
-
-            serialized_user = UserGetProfileSchema(many=True).dump(users)
-            return jsonify(serialized_user), 200
+            return jsonify(serialize_user_list(users)), 200
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
             abort(500, "Internal Server Error")

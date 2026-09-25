@@ -10,16 +10,22 @@ from flask_jwt_extended import (
 )
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import selectinload
 from flask import jsonify, current_app
 from passlib.hash import pbkdf2_sha512
 from extensions import cache
+from db import db
 from werkzeug.exceptions import Forbidden
 
-from models import UserModel, FollowingModel, SocialModel
+from models import UserModel, UserRole, FollowingModel, SocialModel, RecipeModel
 from schemas import (
     UserRegisterSchema,
     UserLoginSchema,
+    UserPublicProfileSchema,
     UserGetProfileSchema,
+    UserProfileDetailSchema,
+    UserListSchema,
     UserUpdateInfoSchema,
     UserUpdateImageSchema,
     UserResetPasswordSchema,
@@ -29,10 +35,10 @@ from schemas import (
 from utils import (
     count_following,
     count_follower,
-    increment_view,
     get_social_facebook,
     get_social_instagram,
     get_social_tiktok,
+    serialize_user_list,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -142,6 +148,40 @@ class UserLogin(MethodView):
             abort(401, "Invalid Credentials")
 
 
+@blp.route("/users")
+class GetAllUsers(MethodView):
+    @blp.response(200, UserListSchema(many=True))
+    def get(self):
+        try:
+            users = UserModel.query.order_by(UserModel.id.asc()).all()
+            return jsonify(serialize_user_list(users)), 200
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            abort(500, "Internal Server Error")
+        except Exception as e:
+            current_app.logger.error(f"An unexpected error occurred: {str(e)}")
+            abort(500, "Internal Server Error")
+
+
+@blp.route("/users/chefs")
+class GetAllChefs(MethodView):
+    @blp.response(200, UserListSchema(many=True))
+    def get(self):
+        try:
+            chefs = (
+                UserModel.query.filter_by(role=UserRole.CHEF)
+                .order_by(UserModel.id.asc())
+                .all()
+            )
+            return jsonify(serialize_user_list(chefs)), 200
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            abort(500, "Internal Server Error")
+        except Exception as e:
+            current_app.logger.error(f"An unexpected error occurred: {str(e)}")
+            abort(500, "Internal Server Error")
+
+
 @blp.route("/users/profile")
 class UserGetOwnProfile(MethodView):
 
@@ -176,37 +216,102 @@ class UserGetOwnProfile(MethodView):
             abort(500, "Internal Server Error")
 
 
+def _fetch_profile_row(user_id=None, username=None):
+    following_count = (
+        select(func.count(FollowingModel.id))
+        .where(FollowingModel.follower_id == UserModel.id)
+        .correlate(UserModel)
+        .scalar_subquery()
+    )
+    follower_count = (
+        select(func.count(FollowingModel.id))
+        .where(FollowingModel.followed_id == UserModel.id)
+        .correlate(UserModel)
+        .scalar_subquery()
+    )
+    recipe_count = (
+        select(func.count(RecipeModel.id))
+        .where(RecipeModel.author_id == UserModel.id)
+        .correlate(UserModel)
+        .scalar_subquery()
+    )
+
+    query = (
+        select(
+            UserModel,
+            following_count.label("total_following"),
+            follower_count.label("total_follower"),
+            recipe_count.label("total_recipe_count"),
+        )
+        .options(selectinload(UserModel.socials))
+    )
+
+    if user_id is not None:
+        query = query.where(UserModel.id == user_id)
+    else:
+        query = query.where(UserModel.username == username)
+
+    return db.session.execute(query).first()
+
+
+def _build_profile_payload(row, view_count, updated_at):
+    user, total_following, total_follower, total_recipe_count = row
+    social = min(user.socials, key=lambda item: item.id) if user.socials else None
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "image": user.image,
+        "role": user.role,
+        "bio": user.bio,
+        "location": user.location,
+        "total_following": total_following,
+        "total_follower": total_follower,
+        "total_recipe_count": total_recipe_count,
+        "view_count": view_count,
+        "social_facebook": social.facebook if social else None,
+        "social_instagram": social.instagram if social else None,
+        "social_tiktok": social.tiktok if social else None,
+        "created_at": user.created_at,
+        "updated_at": updated_at,
+    }
+
+
+def _increment_view_count(user_id):
+    return db.session.execute(
+        update(UserModel)
+        .where(UserModel.id == user_id)
+        .values(view_count=func.coalesce(UserModel.view_count, 0) + 1)
+        .returning(UserModel.view_count, UserModel.updated_at)
+        .execution_options(synchronize_session=False)
+    ).one()
+
+
 @blp.route("/users/<string:username_in_search>")
 class GetProfileByUsername(MethodView):
 
-    @blp.response(200, schema=UserGetProfileSchema)
-    # @cache.cached(timeout=60 * 5)
+    @blp.response(200, schema=UserPublicProfileSchema)
     def get(self, username_in_search):
         try:
+            row = _fetch_profile_row(username=username_in_search)
 
-            user = UserModel.query.filter_by(username=username_in_search).first()
+            if not row:
+                return jsonify({"message": "The user is not found"}), 404
 
-            if not user:
-                return (
-                    jsonify({"message", "The user is not found"}),
-                    404,
-                )
+            view_count, updated_at = _increment_view_count(row[0].id)
+            profile = _build_profile_payload(row, view_count, updated_at)
 
-            user.total_following = count_following(user.id)
-            user.total_follower = count_follower(user.id)
-
-            user.social_facebook = get_social_facebook(user.id)
-            user.social_instagram = get_social_instagram(user.id)
-            user.social_tiktok = get_social_tiktok(user.id)
-
-            increment_view(user)
-
-            serialized_user = UserGetProfileSchema().dump(user)
+            serialized_user = UserPublicProfileSchema().dump(profile)
+            db.session.commit()
             return jsonify(serialized_user), 200
         except SQLAlchemyError as e:
+            db.session.rollback()
             current_app.logger.error(f"Database error: {str(e)}")
             abort(500, "Internal Server Error")
         except Exception as e:
+            db.session.rollback()
             current_app.logger.error(f"An unexpected error occurred: {str(e)}")
             abort(500, "Internal Server Error")
 
@@ -214,34 +319,26 @@ class GetProfileByUsername(MethodView):
 @blp.route("/users/<int:user_id_in_search>")
 class GetProfileById(MethodView):
 
-    @blp.response(200, schema=UserGetProfileSchema)
-    # @cache.cached(timeout=60 * 5)
+    @blp.response(200, schema=UserProfileDetailSchema)
     def get(self, user_id_in_search):
         try:
+            row = _fetch_profile_row(user_id=user_id_in_search)
 
-            user = UserModel.query.filter_by(id=user_id_in_search).first()
+            if not row:
+                return jsonify({"message": "The user is not found"}), 404
 
-            if not user:
-                return (
-                    jsonify({"message", "The user is not found"}),
-                    404,
-                )
+            view_count, updated_at = _increment_view_count(user_id_in_search)
+            profile = _build_profile_payload(row, view_count, updated_at)
 
-            user.total_following = count_following(user.id)
-            user.total_follower = count_follower(user.id)
-
-            user.social_facebook = get_social_facebook(user.id)
-            user.social_instagram = get_social_instagram(user.id)
-            user.social_tiktok = get_social_tiktok(user.id)
-
-            increment_view(user)
-
-            serialized_user = UserGetProfileSchema().dump(user)
+            serialized_user = UserProfileDetailSchema().dump(profile)
+            db.session.commit()
             return jsonify(serialized_user), 200
         except SQLAlchemyError as e:
+            db.session.rollback()
             current_app.logger.error(f"Database error: {str(e)}")
             abort(500, "Internal Server Error")
         except Exception as e:
+            db.session.rollback()
             current_app.logger.error(f"An unexpected error occurred: {str(e)}")
             abort(500, "Internal Server Error")
 

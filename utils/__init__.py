@@ -40,6 +40,7 @@ from .feed_helpers import (
 )
 
 from .user_helpers import (
+    serialize_user_list,
     count_following,
     count_follower,
     get_author_facebook,

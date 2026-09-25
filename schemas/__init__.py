@@ -1,7 +1,10 @@
 from .userschema import (
     UserLoginSchema,
     UserRegisterSchema,
+    UserPublicProfileSchema,
     UserGetProfileSchema,
+    UserProfileDetailSchema,
+    UserListSchema,
     UserUpdateInfoSchema,
     UserUpdateImageSchema,
     UserResetPasswordSchema,

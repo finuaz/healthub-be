@@ -1,4 +1,41 @@
+from sqlalchemy import func
+
 from models import FollowingModel, RecipeModel, UserModel, SocialModel
+from schemas import UserPublicProfileSchema
+
+
+def serialize_user_list(users):
+    if not users:
+        return []
+
+    user_ids = [user.id for user in users]
+    following_counts = dict(
+        FollowingModel.query.with_entities(
+            FollowingModel.follower_id, func.count(FollowingModel.id)
+        )
+        .group_by(FollowingModel.follower_id)
+        .all()
+    )
+    follower_counts = dict(
+        FollowingModel.query.with_entities(
+            FollowingModel.followed_id, func.count(FollowingModel.id)
+        )
+        .group_by(FollowingModel.followed_id)
+        .all()
+    )
+    socials = {}
+    for social in SocialModel.query.filter(SocialModel.user_id.in_(user_ids)).all():
+        socials.setdefault(social.user_id, social)
+
+    for user in users:
+        user.total_following = following_counts.get(user.id, 0)
+        user.total_follower = follower_counts.get(user.id, 0)
+        social = socials.get(user.id)
+        user.social_facebook = social.facebook if social else None
+        user.social_instagram = social.instagram if social else None
+        user.social_tiktok = social.tiktok if social else None
+
+    return UserPublicProfileSchema(many=True).dump(users)
 
 
 def count_following(user_id):

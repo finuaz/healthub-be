@@ -25,16 +25,14 @@ class UserLoginSchema(Schema):
     password = fields.String(required=True, load_only=True)
 
 
-class UserGetProfileSchema(Schema):
+class UserPublicProfileSchema(Schema):
     id = fields.Integer(dump_only=True)
     username = fields.String(required=True)
     first_name = fields.String(required=True)
     last_name = fields.String(required=True)
-    email = fields.String(required=True)
     image = fields.String()
     role = EnumField(UserRole, by_value=True)
     bio = fields.String()
-    phone = fields.String()
     location = fields.String()
     total_following = fields.Integer()
     total_follower = fields.Integer()
@@ -44,6 +42,19 @@ class UserGetProfileSchema(Schema):
     social_tiktok = fields.String()
     created_at = fields.Str(dump_only=True, format="%Y-%m-%d %H:%M:%S")
     updated_at = fields.Str(dump_only=True, format="%Y-%m-%d %H:%M:%S")
+
+
+class UserGetProfileSchema(UserPublicProfileSchema):
+    email = fields.String(required=True)
+    phone = fields.String()
+
+
+class UserProfileDetailSchema(UserPublicProfileSchema):
+    total_recipe_count = fields.Integer()
+
+
+class UserListSchema(UserPublicProfileSchema):
+    pass
 
 
 class UserGetFollowingFollower(Schema):
