@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify, current_app
 from sqlalchemy import desc
 from extensions import cache
+from db import db
 
 from models import (
     RecipeModel,
@@ -20,17 +21,9 @@ from models import (
 )
 from schemas import RecipePlusPlusSchema, UserGetProfileSchema
 from utils import (
-    find_all_category,
-    find_all_type,
-    find_all_origin,
-    find_all_tag,
-    get_likes,
-    get_rating,
-    find_attachment,
-    chef_recipe_check,
+    enrich_recipes,
     count_follower,
     count_following,
-    get_author_name,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -50,23 +43,14 @@ class GetAllSelfCreatedRecipes(MethodView):
         try:
             recipes = (
                 RecipeModel.query.filter_by(author_id=current_user_id)
-                .order_by(desc(RecipeModel.nutriscore))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
                 .all()
             )
 
             if not recipes:
-                abort(404, message="You have not created any recipe yet")
+                return jsonify({"message": "You have not created any recipe yet"}), 404
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -90,23 +74,14 @@ class GetAllRecipesCreatedByUser(MethodView):
         try:
             recipes = (
                 RecipeModel.query.filter_by(author_id=author_id)
-                .order_by(desc(RecipeModel.nutriscore))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
                 .all()
             )
 
             if not recipes:
-                abort(404, message="The user has not created any recipe")
+                return jsonify({"message": "The user has not created any recipe"}), 404
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -140,23 +115,14 @@ class GetAllRecipesCreatedByUser(MethodView):
         try:
             recipes = (
                 RecipeModel.query.filter_by(author_id=user.id)
-                .order_by(desc(RecipeModel.nutriscore))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
                 .all()
             )
 
             if not recipes:
-                abort(404, message="The user has not created any recipe")
+                return jsonify({"message": "The user has not created any recipe"}), 404
 
-            for recipe in recipes:
-                recipe.author_name = get_author_name(recipe.id)
-                recipe.categories = find_all_category(recipe.id)
-                recipe.type = find_all_type(recipe.id)
-                recipe.origin = find_all_origin(recipe.id)
-                recipe.tags = find_all_tag(recipe.id)
-                recipe.like_count = get_likes(recipe.id)
-                recipe.rating = get_rating(recipe.id)
-                recipe.attachment = find_attachment(recipe.id)
-                recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -178,30 +144,24 @@ class GetAllLikedRecipes(MethodView):
     def get(self):
         current_user_id = get_jwt_identity()["id"]
 
-        recipes = []
-
         try:
-            liked_recipes = LikeModel.query.filter_by(user_id=current_user_id).all()
+            liked_recipe_ids = [
+                liked_recipe.recipe_id
+                for liked_recipe in LikeModel.query.filter_by(
+                    user_id=current_user_id
+                ).all()
+            ]
 
-            if not liked_recipes:
-                abort(404, message="You have not liked any recipes yet")
+            if not liked_recipe_ids:
+                return jsonify({"message": "You have not liked any recipes yet"}), 404
 
-            for liked_recipe in liked_recipes:
+            recipes = (
+                RecipeModel.query.filter(RecipeModel.id.in_(liked_recipe_ids))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
-                recipe = RecipeModel.query.filter_by(id=liked_recipe.recipe_id).first()
-
-                if recipe:
-                    recipe.author_name = get_author_name(liked_recipe.recipe_id)
-                    recipe.categories = find_all_category(liked_recipe.recipe_id)
-                    recipe.type = find_all_type(liked_recipe.recipe_id)
-                    recipe.origin = find_all_origin(liked_recipe.recipe_id)
-                    recipe.tags = find_all_tag(liked_recipe.recipe_id)
-                    recipe.like_count = get_likes(liked_recipe.recipe_id)
-                    recipe.rating = get_rating(liked_recipe.recipe_id)
-                    recipe.attachment = find_attachment(liked_recipe.recipe_id)
-                    recipe.is_chef_recipe = chef_recipe_check(liked_recipe.recipe_id)
-
-                    recipes.append(recipe)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -223,39 +183,29 @@ class GetAllRecipesFromFollowedUser(MethodView):
     def get(self):
         current_user_id = get_jwt_identity()["id"]
 
-        recipes = []
-
         try:
-            followed_users = FollowingModel.query.filter_by(
-                follower_id=current_user_id
-            ).all()
+            followed_user_ids = db.session.query(FollowingModel.followed_id).filter(
+                FollowingModel.follower_id == current_user_id
+            )
 
-            if not followed_users:
-                abort(404, message="You are not following any users")
+            recipes = (
+                RecipeModel.query.filter(RecipeModel.author_id.in_(followed_user_ids))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
-            for followed_user in followed_users:
+            if not recipes:
+                return (
+                    jsonify(
+                        {
+                            "message": "No recipes have been created by the users "
+                            "you follow"
+                        }
+                    ),
+                    404,
+                )
 
-                user_recipes = RecipeModel.query.filter_by(
-                    author_id=followed_user.followed_id
-                ).all()
-
-                if not user_recipes:
-                    continue
-
-                for recipe in user_recipes:
-
-                    if recipe:
-                        recipe.author_name = get_author_name(recipe.id)
-                        recipe.categories = find_all_category(recipe.id)
-                        recipe.type = find_all_type(recipe.id)
-                        recipe.origin = find_all_origin(recipe.id)
-                        recipe.tags = find_all_tag(recipe.id)
-                        recipe.like_count = get_likes(recipe.id)
-                        recipe.rating = get_rating(recipe.id)
-                        recipe.attachment = find_attachment(recipe.id)
-                        recipe.is_chef_recipe = chef_recipe_check(recipe.id)
-
-                        recipes.append(recipe)
+            enrich_recipes(recipes)
 
             serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
             return jsonify(serialized_recipes), 200
@@ -276,33 +226,26 @@ class GetAllRecipesCreatedByChef(MethodView):
     @jwt_required()
     def get(self):
         try:
-            chefs = UserModel.query.filter_by(role=UserRole.CHEF).all()
+            chef_ids = [
+                chef.id for chef in UserModel.query.filter_by(role=UserRole.CHEF).all()
+            ]
 
-            if not chefs:
-                abort(404, message="There is no chef here")
+            if not chef_ids:
+                return jsonify({"message": "There is no chef here"}), 404
 
-            for chef in chefs:
-                recipes = (
-                    RecipeModel.query.filter_by(author_id=chef.id)
-                    .order_by(desc(RecipeModel.nutriscore))
-                    .all()
-                )
+            recipes = (
+                RecipeModel.query.filter(RecipeModel.author_id.in_(chef_ids))
+                .order_by(desc(RecipeModel.nutriscore), RecipeModel.id)
+                .all()
+            )
 
-                for recipe in recipes:
-                    recipe.author_name = get_author_name(recipe.id)
-                    recipe.categories = find_all_category(recipe.id)
-                    recipe.type = find_all_type(recipe.id)
-                    recipe.origin = find_all_origin(recipe.id)
-                    recipe.tags = find_all_tag(recipe.id)
-                    recipe.like_count = get_likes(recipe.id)
-                    recipe.rating = get_rating(recipe.id)
-                    recipe.attachment = find_attachment(recipe.id)
-                    recipe.is_chef_recipe = chef_recipe_check(recipe.id)
+            if not recipes:
+                return jsonify({"message": "Chefs have not created any recipe yet"}), 404
 
-                serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
-                return jsonify(serialized_recipes), 200
+            enrich_recipes(recipes)
 
-            return jsonify({"message": "OK"}), 200
+            serialized_recipes = RecipePlusPlusSchema(many=True).dump(recipes)
+            return jsonify(serialized_recipes), 200
 
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")

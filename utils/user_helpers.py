@@ -15,6 +15,8 @@ def get_author_facebook(recipe_id):
     recipe = RecipeModel.query.filter_by(id=recipe_id).first()
     author = UserModel.query.filter_by(id=recipe.author_id).first()
     social = SocialModel.query.filter_by(user_id=author.id).first()
+    if not social:
+        return None
 
     return social.facebook if social.facebook else None
 
@@ -23,6 +25,8 @@ def get_author_instagram(recipe_id):
     recipe = RecipeModel.query.filter_by(id=recipe_id).first()
     author = UserModel.query.filter_by(id=recipe.author_id).first()
     social = SocialModel.query.filter_by(user_id=author.id).first()
+    if not social:
+        return None
 
     return social.instagram if social.instagram else None
 
